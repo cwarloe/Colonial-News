@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Pennsylvania Gazette &mdash; {{ day_name }}, {{ month_name }} {{ day_num }}, {{ year }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+DW+Pica:ital@0;1&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+
+  <style>
+    /* ───────────────────────────────────────────────
+       RESET & BASE
+    ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --parchment:    #f2e8d0;
+      --parchment-dk: #e8d8b4;
+      --ink:          #1a1208;
+      --ink-faded:    #3d2f1a;
+      --rule-color:   #5c4020;
+      --red-drop:     #7a1a1a;
+      --col-gap:      18px;
+      --page-pad:     28px;
+    }
+
+    html { font-size: 14px; }
+
+    body {
+      background: #b8a07a;
+      font-family: 'IM Fell English', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    /* ───────────────────────────────────────────────
+       PAGE WRAPPER  (the physical newspaper sheet)
+    ─────────────────────────────────────────────── */
+    .page {
+      max-width: 980px;
+      margin: 24px auto;
+      background: var(--parchment);
+      /* aged paper texture via radial gradients */
+      background-image:
+        radial-gradient(ellipse at 10% 15%, rgba(180,140,80,.18) 0%, transparent 60%),
+        radial-gradient(ellipse at 85% 80%, rgba(120,90,40,.15) 0%, transparent 55%),
+        radial-gradient(ellipse at 50% 50%, rgba(200,165,100,.10) 0%, transparent 80%),
+        linear-gradient(175deg, #f5ecd5 0%, #eedfc0 40%, #f0e4c5 70%, #e9d8b0 100%);
+      padding: var(--page-pad);
+      border: 2px solid var(--rule-color);
+      box-shadow: 4px 4px 20px rgba(0,0,0,.45), inset 0 0 60px rgba(150,110,50,.08);
+    }
+
+    /* ───────────────────────────────────────────────
+       HORIZONTAL RULES
+    ─────────────────────────────────────────────── */
+    .rule-thick {
+      border: none;
+      border-top: 3px solid var(--rule-color);
+      margin: 6px 0;
+    }
+    .rule-thin {
+      border: none;
+      border-top: 1px solid var(--rule-color);
+      margin: 4px 0;
+    }
+    .rule-double {
+      border: none;
+      border-top: 2px double var(--rule-color);
+      margin: 5px 0;
+    }
+    .rule-ornament {
+      text-align: center;
+      font-size: .9rem;
+      letter-spacing: 6px;
+      color: var(--rule-color);
+      margin: 8px 0;
+      user-select: none;
+    }
+
+    /* ───────────────────────────────────────────────
+       MASTHEAD
+    ─────────────────────────────────────────────── */
+    .masthead {
+      text-align: center;
+      padding: 0 0 10px 0;
+    }
+
+    .masthead-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: .72rem;
+      letter-spacing: .04em;
+      padding: 4px 0;
+      color: var(--ink-faded);
+      font-style: italic;
+    }
+
+    .masthead-flag {
+      font-family: 'UnifrakturMaguntia', 'IM Fell English', serif;
+      font-size: 4.6rem;
+      line-height: 1.05;
+      color: var(--ink);
+      text-shadow: 1px 1px 0 rgba(100,70,20,.3);
+      letter-spacing: .02em;
+    }
+
+    .masthead-subtitle {
+      font-size: .95rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      margin: 2px 0 4px;
+      color: var(--ink-faded);
+    }
+
+    .masthead-motto {
+      font-style: italic;
+      font-size: .85rem;
+      letter-spacing: .05em;
+      color: var(--ink-faded);
+      margin: 3px 0 6px;
+    }
+
+    .masthead-info-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: .72rem;
+      letter-spacing: .04em;
+      border-top: 1px solid var(--rule-color);
+      border-bottom: 1px solid var(--rule-color);
+      padding: 3px 0;
+      color: var(--ink-faded);
+    }
+
+    /* ───────────────────────────────────────────────
+       WEATHER & PRICE STRIP
+    ─────────────────────────────────────────────── */
+    .weather-strip {
+      font-size: .72rem;
+      font-style: italic;
+      text-align: center;
+      color: var(--ink-faded);
+      padding: 4px 0;
+      border-bottom: 1px solid var(--rule-color);
+      margin-bottom: 10px;
+    }
+
+    /* ───────────────────────────────────────────────
+       SECTION HEADERS
+    ─────────────────────────────────────────────── */
+    .section-header {
+      text-align: center;
+      margin: 18px 0 10px;
+    }
+    .section-header h2 {
+      font-size: .85rem;
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      font-weight: normal;
+      font-style: normal;
+      display: inline-block;
+      padding: 0 18px;
+      background: var(--parchment);
+      position: relative;
+      z-index: 1;
+    }
+    .section-header::before {
+      content: '';
+      display: block;
+      border-top: 1px solid var(--rule-color);
+      margin-top: 9px;
+      margin-bottom: -9px;
+    }
+
+    /* ───────────────────────────────────────────────
+       COLUMN GRIDS
+    ─────────────────────────────────────────────── */
+    .cols-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0 var(--col-gap);
+    }
+    .cols-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0 var(--col-gap);
+    }
+
+    .col-divider {
+      border-left: 1px solid var(--rule-color);
+      /* used as a ::before on cols that need a left border */
+    }
+
+    /* Vertical column separators using border on inner cols */
+    .cols-3 > *:not(:first-child),
+    .cols-2 > *:not(:first-child) {
+      border-left: 1px solid var(--rule-color);
+      padding-left: var(--col-gap);
+    }
+
+    /* Wide article that spans all 3 columns */
+    .col-wide {
+      grid-column: 1 / -1;
+      border-bottom: 1px solid var(--rule-color);
+      padding-bottom: 10px;
+      margin-bottom: 8px;
+    }
+
+    /* ───────────────────────────────────────────────
+       ARTICLE TYPOGRAPHY
+    ─────────────────────────────────────────────── */
+    article {
+      margin-bottom: 14px;
+    }
+
+    article h3 {
+      font-size: .95rem;
+      font-weight: bold;
+      font-style: normal;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      line-height: 1.3;
+      margin-bottom: 2px;
+    }
+
+    article .wide-headline {
+      font-size: 1.35rem;
+    }
+
+    article .deck {
+      font-size: .8rem;
+      font-style: italic;
+      text-align: center;
+      color: var(--ink-faded);
+      margin-bottom: 4px;
+      line-height: 1.35;
+    }
+
+    article .dateline {
+      font-variant: small-caps;
+      font-size: .72rem;
+      letter-spacing: .07em;
+      color: var(--ink-faded);
+      margin-bottom: 5px;
+    }
+
+    article p {
+      text-align: justify;
+      font-size: .82rem;
+      hyphens: auto;
+      margin-bottom: .55em;
+    }
+
+    /* Drop-cap on first paragraph's first letter */
+    article p:first-of-type::first-letter {
+      font-size: 2.8em;
+      font-family: 'IM Fell English', serif;
+      font-weight: bold;
+      float: left;
+      line-height: .85;
+      margin: .05em .08em -.05em 0;
+      color: var(--red-drop);
+    }
+
+    /* Article divider ornament */
+    .art-divider {
+      text-align: center;
+      font-size: .75rem;
+      letter-spacing: 8px;
+      color: var(--rule-color);
+      margin: 6px 0;
+    }
+
+    /* ───────────────────────────────────────────────
+       LETTERS TO THE EDITOR
+    ─────────────────────────────────────────────── */
+    .letters-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0 var(--col-gap);
+    }
+    .letters-grid > *:not(:first-child) {
+      border-left: 1px solid var(--rule-color);
+      padding-left: var(--col-gap);
+    }
+
+    .letter {
+      margin-bottom: 12px;
+    }
+
+    .letter-header {
+      font-variant: small-caps;
+      font-size: .75rem;
+      letter-spacing: .06em;
+      color: var(--ink-faded);
+      margin-bottom: 4px;
+    }
+
+    .letter p {
+      font-size: .8rem;
+      text-align: justify;
+      font-style: italic;
+      hyphens: auto;
+      margin-bottom: .5em;
+    }
+
+    .letter p:first-of-type::first-letter {
+      font-size: 2.4em;
+      font-style: normal;
+      float: left;
+      line-height: .85;
+      margin: .05em .08em -.05em 0;
+      color: var(--red-drop);
+    }
+
+    /* ───────────────────────────────────────────────
+       CLASSIFIEDS
+    ─────────────────────────────────────────────── */
+    .classifieds-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0 var(--col-gap);
+    }
+    .classifieds-grid > *:not(:first-child) {
+      border-left: 1px solid var(--rule-color);
+      padding-left: var(--col-gap);
+    }
+
+    .classified-item {
+      margin-bottom: 10px;
+    }
+
+    .classified-item .cat {
+      font-variant: small-caps;
+      font-size: .75rem;
+      letter-spacing: .1em;
+      font-weight: bold;
+      color: var(--ink);
+      display: block;
+      margin-bottom: 2px;
+      border-bottom: 1px dotted var(--rule-color);
+      padding-bottom: 2px;
+    }
+
+    .classified-item p {
+      font-size: .78rem;
+      text-align: justify;
+      hyphens: auto;
+    }
+
+    /* ───────────────────────────────────────────────
+       SPORTS & LEISURE — single column scan-like
+    ─────────────────────────────────────────────── */
+    .leisure-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0 var(--col-gap);
+    }
+    .leisure-grid > *:not(:first-child) {
+      border-left: 1px solid var(--rule-color);
+      padding-left: var(--col-gap);
+    }
+
+    /* ───────────────────────────────────────────────
+       PRINTER'S NOTICE (footer)
+    ─────────────────────────────────────────────── */
+    .printers-notice {
+      text-align: center;
+      font-style: italic;
+      font-size: .75rem;
+      color: var(--ink-faded);
+      margin-top: 16px;
+      padding-top: 8px;
+      border-top: 2px solid var(--rule-color);
+    }
+
+    .printer-colophon {
+      font-variant: small-caps;
+      font-size: .72rem;
+      letter-spacing: .12em;
+      margin-top: 4px;
+      color: var(--ink-faded);
+    }
+
+    /* ───────────────────────────────────────────────
+       PRINT STYLES
+    ─────────────────────────────────────────────── */
+    @media print {
+      body { background: white; }
+      .page {
+        max-width: 100%;
+        margin: 0;
+        border: none;
+        box-shadow: none;
+        padding: 12px;
+      }
+    }
+
+    /* ───────────────────────────────────────────────
+       TINY-SCREEN FALLBACK
+    ─────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .cols-3, .cols-2, .classifieds-grid, .letters-grid, .leisure-grid {
+        grid-template-columns: 1fr;
+      }
+      .cols-3 > *:not(:first-child),
+      .cols-2 > *:not(:first-child),
+      .classifieds-grid > *:not(:first-child),
+      .letters-grid > *:not(:first-child),
+      .leisure-grid > *:not(:first-child) {
+        border-left: none;
+        border-top: 1px solid var(--rule-color);
+        padding-left: 0;
+        padding-top: 10px;
+      }
+      .masthead-flag { font-size: 2.8rem; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="page">
+
+  {# ══════════════════════════════════════════
+     MASTHEAD
+  ══════════════════════════════════════════ #}
+  <header class="masthead">
+    <div class="masthead-top-bar">
+      <span>Vol. {{ volume }}, No. {{ issue_num }}</span>
+      <span>Printed by B. FRANKLIN &amp; D. HALL, at the Post-Office in Market-Street, Philadelphia</span>
+      <span>Price: Three-Pence</span>
+    </div>
+
+    <hr class="rule-thick">
+    <hr class="rule-thin">
+
+    <div class="masthead-flag">The Pennsylvania Gazette</div>
+
+    <div class="masthead-subtitle">Established 1728 by Benjamin Franklin</div>
+
+    <div class="masthead-motto">
+      &#x275D; Containing the Freshest Advices, Foreign and Domestick &#x275E;
+    </div>
+
+    <div class="masthead-info-bar">
+      <span>{{ day_name }}, {{ month_name }} {{ day_num }}, {{ year }}</span>
+      <span>PHILADELPHIA</span>
+      <span>Published Weekly &mdash; And as Occasion Requires</span>
+    </div>
+  </header>
+
+  {# Weather strip #}
+  {% if content.weather %}
+  <div class="weather-strip">
+    &#x2767;&ensp;{{ content.weather }}&ensp;&#x2767;
+  </div>
+  {% endif %}
+
+  {# ══════════════════════════════════════════
+     FRONT PAGE — NEWS OF THE DAY
+  ══════════════════════════════════════════ #}
+  <section>
+    <div class="section-header">
+      <h2>&#x2736;&ensp;News of the Day&ensp;&#x2736;</h2>
+    </div>
+
+    <div class="cols-3">
+      {% for article in content.front_page_articles %}
+        {% if article.wide %}
+          {# Wide article spans all columns #}
+          <div class="col-wide">
+            <article>
+              <h3 class="wide-headline">{{ article.headline }}</h3>
+              {% if article.deck %}<div class="deck">{{ article.deck }}</div>{% endif %}
+              <hr class="rule-thin">
+              {% if article.dateline %}<div class="dateline">{{ article.dateline }}</div>{% endif %}
+              {% for para in article.body.split('\n\n') %}
+                <p>{{ para }}</p>
+              {% endfor %}
+            </article>
+          </div>
+        {% else %}
+          {# Normal single-column article #}
+          <div>
+            <article>
+              <h3>{{ article.headline }}</h3>
+              {% if article.deck %}<div class="deck">{{ article.deck }}</div>{% endif %}
+              <hr class="rule-thin">
+              {% if article.dateline %}<div class="dateline">{{ article.dateline }}</div>{% endif %}
+              {% for para in article.body.split('\n\n') %}
+                <p>{{ para }}</p>
+              {% endfor %}
+            </article>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="rule-double">
+
+  {# ══════════════════════════════════════════
+     NATIONAL NEWS
+  ══════════════════════════════════════════ #}
+  <section>
+    <div class="section-header">
+      <h2>&#x2042;&ensp;Intelligence from the Colonies&ensp;&#x2042;</h2>
+    </div>
+
+    <div class="cols-3">
+      {% for article in content.national_news %}
+      <div>
+        <article>
+          <h3>{{ article.headline }}</h3>
+          <hr class="rule-thin">
+          {% if article.dateline %}<div class="dateline">{{ article.dateline }}</div>{% endif %}
+          {% for para in article.body.split('\n\n') %}
+            <p>{{ para }}</p>
+          {% endfor %}
+        </article>
+        {% if not loop.last %}<div class="art-divider">&#x2756;</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="rule-double">
+
+  {# ══════════════════════════════════════════
+     INTERNATIONAL NEWS
+  ══════════════════════════════════════════ #}
+  <section>
+    <div class="section-header">
+      <h2>&#x2042;&ensp;Foreign Intelligence&ensp;&#x2042;</h2>
+    </div>
+
+    <div class="cols-2">
+      {% for article in content.international_news %}
+      <div>
+        <article>
+          <h3>{{ article.headline }}</h3>
+          <hr class="rule-thin">
+          {% if article.dateline %}<div class="dateline">{{ article.dateline }}</div>{% endif %}
+          {% for para in article.body.split('\n\n') %}
+            <p>{{ para }}</p>
+          {% endfor %}
+        </article>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="rule-double">
+
+  {# ══════════════════════════════════════════
+     LOCAL NEWS
+  ══════════════════════════════════════════ #}
+  <section>
+    <div class="section-header">
+      <h2>&#x2736;&ensp;Philadelphia &amp; Vicinity&ensp;&#x2736;</h2>
+    </div>
+
+    <div class="cols-2">
+      {% for article in content.local_news %}
+      <div>
+        <article>
+          <h3>{{ article.headline }}</h3>
+          <hr class="rule-thin">
+          {% for para in article.body.split('\n\n') %}
+            <p>{{ para }}</p>
+          {% endfor %}
+        </article>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="rule-double">
+
+  {# ══════════════════════════════════════════
+     SPORTS & LEISURE
+  ══════════════════════════════════════════ #}
+  <section>
+    <div class="section-header">
+      <h2>&#x2042;&ensp;Sports, Recreation &amp; Diversions&ensp;&#x2042;</h2>
+    </div>
+
+    <div class="leisure-grid">
+      {% for item in content.sports_and_leisure %}
+      <div>
+        <article>
+          <h3>{{ item.headline }}</h3>
+          <hr class="rule-thin">
+          {% for para in item.body.split('\n\n') %}
+            <p>{{ para }}</p>
+          {% endfor %}
+        </article>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="rule-double">
+
+  {# ══════════════════════════════════════════
+     LETTERS TO THE EDITOR
+  ══════════════════════════════════════════ #}
+  <section>
+    <div class="section-header">
+      <h2>&#x2756;&ensp;Letters to the Printer&ensp;&#x2756;</h2>
+    </div>
+
+    <div class="letters-grid">
+      {% for letter in content.letters_to_editor %}
+      <div>
+        <div class="letter">
+          <div class="letter-header">
+            From: {{ letter.author }}
+            {% if letter.subject %}&mdash; <em>{{ letter.subject }}</em>{% endif %}
+          </div>
+          {% for para in letter.body.split('\n\n') %}
+            <p>{{ para }}</p>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <hr class="rule-double">
+
+  {# ══════════════════════════════════════════
+     CLASSIFIEDS & NOTICES
+  ══════════════════════════════════════════ #}
+  <section>
+    <div class="section-header">
+      <h2>&#x2736;&ensp;Advertisements &amp; Public Notices&ensp;&#x2736;</h2>
+    </div>
+
+    <div class="classifieds-grid">
+      {% for item in content.classifieds %}
+      <div>
+        <div class="classified-item">
+          <span class="cat">{{ item.category }}</span>
+          <p>{{ item.text }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# ══════════════════════════════════════════
+     PRINTER'S NOTICE
+  ══════════════════════════════════════════ #}
+  <footer>
+    <hr class="rule-thick">
+    <div class="printers-notice">
+      {% if content.printers_notice %}
+        {{ content.printers_notice }}
+      {% else %}
+        Subscriptions received at the Post-Office in Market-Street. Price: Ten Shillings per Annum.
+      {% endif %}
+    </div>
+    <div class="printer-colophon">
+      Philadelphia: Printed by B. Franklin &amp; D. Hall &mdash;
+      {{ day_name }}, {{ month_name }} {{ day_num }}, {{ year }} &mdash;
+      Vol. {{ volume }}, No. {{ issue_num }}
+    </div>
+  </footer>
+
+</div><!-- /.page -->
+</body>
+</html>
