@@ -9,18 +9,18 @@ Usage:
     python3 generate_newspaper.py
 
 Requirements:
-    ANTHROPIC_API_KEY environment variable must be set.
+    Claude Code CLI must be installed and authenticated (no API key needed).
+    Install deps: pip3 install jinja2
 """
 
-import os
 import sys
 import json
+import subprocess
 import datetime
 import re
 import logging
 from pathlib import Path
 
-import anthropic
 from jinja2 import Environment, FileSystemLoader
 
 # ─── Paths ────────────────────────────────────────────────────────────────────
@@ -29,9 +29,9 @@ TEMPLATES_DIR = SCRIPT_DIR / "templates"
 NEWSPAPERS_DIR = SCRIPT_DIR / "newspapers"
 LOG_FILE = SCRIPT_DIR / "newspaper.log"
 
-# ─── Claude Model ─────────────────────────────────────────────────────────────
+# ─── Claude CLI ───────────────────────────────────────────────────────────────
+CLAUDE_BIN = "claude"
 MODEL = "claude-opus-4-6"
-MAX_TOKENS = 8000
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -222,38 +222,37 @@ The newspaper should feel as though it was actually printed on that date in 1776
 
 
 def generate_newspaper_content(historical_date: datetime.date) -> dict:
-    """Call the Claude API to generate newspaper content for the given date."""
-    client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from environment
-
+    """Call the claude CLI to generate newspaper content for the given date."""
     date_str = historical_date.strftime("%B %d, 1776")
     issue_num = estimate_issue_number(historical_date)
     volume = 49  # approximate volume for 1776
 
-    log.info("Calling Claude API for %s (Vol. %d, No. %d)…", date_str, volume, issue_num)
+    log.info("Calling claude CLI for %s (Vol. %d, No. %d)…", date_str, volume, issue_num)
 
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=MAX_TOKENS,
-        thinking={"type": "adaptive"},
-        system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": USER_PROMPT_TEMPLATE.format(
-                    date_str=date_str,
-                    volume=volume,
-                    issue_num=issue_num,
-                ),
-            }
-        ],
+    full_prompt = SYSTEM_PROMPT + "\n\n" + USER_PROMPT_TEMPLATE.format(
+        date_str=date_str,
+        volume=volume,
+        issue_num=issue_num,
     )
 
-    # Extract text block (skip thinking blocks)
-    text_content = ""
-    for block in response.content:
-        if block.type == "text":
-            text_content = block.text
-            break
+    result = subprocess.run(
+        [CLAUDE_BIN, "-p", full_prompt, "--model", MODEL, "--output-format", "json"],
+        capture_output=True,
+        text=True,
+        timeout=300,
+        cwd=str(SCRIPT_DIR),
+    )
+
+    if result.returncode != 0:
+        log.error("claude CLI error (exit %d): %s", result.returncode, result.stderr[:400])
+        raise RuntimeError(f"claude CLI exited with code {result.returncode}")
+
+    # The --output-format json wrapper gives: {"result": "<text>", ...}
+    try:
+        wrapper = json.loads(result.stdout)
+        text_content = wrapper.get("result", result.stdout)
+    except json.JSONDecodeError:
+        text_content = result.stdout
 
     # Strip any markdown fences Claude might add despite instructions
     text_content = re.sub(r"^```[a-z]*\n?", "", text_content.strip())
@@ -321,11 +320,6 @@ def save_newspaper(html: str, date: datetime.date) -> Path:
 # ─── Entry Point ──────────────────────────────────────────────────────────────
 
 def main() -> None:
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        log.error("ANTHROPIC_API_KEY environment variable is not set.")
-        log.error("Set it with:  export ANTHROPIC_API_KEY='sk-ant-...'")
-        sys.exit(1)
-
     historical_date = get_historical_date()
     log.info("Generating newspaper for %s…", historical_date.strftime("%B %d, 1776"))
 
