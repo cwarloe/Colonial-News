@@ -53,7 +53,7 @@ def get_historical_date() -> datetime.date:
     try:
         return today.replace(year=1776)
     except ValueError:
-        # Feb 29 in a modern leap year → Feb 28 in 1776 (not a leap year)
+        # Defensive only: 1776 was a leap year, so Feb 29 maps directly.
         return today.replace(year=1776, day=28)
 
 

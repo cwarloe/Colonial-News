@@ -16,9 +16,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CRON_FILE="/etc/cron.d/colonial-news"
-PYTHON_BIN="$(which python3)"
-CLAUDE_BIN="$(which claude)"
+PYTHON_BIN="$(command -v python3)"
 LOG="$SCRIPT_DIR/newspaper.log"
+# Run the job as the user who invoked sudo: the claude CLI is signed in per user.
+CRON_USER="${SUDO_USER:-$(id -un)}"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  The Pennsylvania Gazette — Setup"
@@ -26,11 +27,16 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # ─── Check claude CLI ──────────────────────────────────────
+# (Checked before resolving the path: under `set -e` a failed `which` would
+# exit silently before this message.)
 if ! command -v claude &> /dev/null; then
   echo "ERROR: 'claude' CLI not found."
   echo "  Install Claude Code and ensure it is in your PATH."
+  echo "  (With sudo, PATH may differ — try: sudo env PATH=\"\$PATH\" bash setup.sh)"
   exit 1
 fi
+CLAUDE_BIN="$(command -v claude)"
+CLAUDE_DIR="$(dirname "$CLAUDE_BIN")"
 echo "✓ claude CLI found: $CLAUDE_BIN"
 
 # ─── Install Python dependencies ────────────────────────────
@@ -51,13 +57,15 @@ cat > "$CRON_FILE" << EOF
 # Runs daily at 5:00 AM
 
 SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+PATH=${CLAUDE_DIR}:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-0 5 * * * root cd ${SCRIPT_DIR} && ${PYTHON_BIN} generate_newspaper.py >> ${LOG} 2>&1
+# The script already writes its own log to newspaper.log; only stderr
+# (e.g. tracebacks) is appended here so lines are not logged twice.
+0 5 * * * ${CRON_USER} cd ${SCRIPT_DIR} && ${PYTHON_BIN} generate_newspaper.py > /dev/null 2>> ${LOG}
 EOF
 
 chmod 644 "$CRON_FILE"
-echo "Cron job installed: $CRON_FILE"
+echo "Cron job installed: $CRON_FILE (runs as $CRON_USER)"
 echo ""
 
 # ─── Summary ────────────────────────────────────────────────
